@@ -47,6 +47,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/chai": "^4.0.10",
+    "@types/es6-promise": "0.0.33",
     "@types/mocha": "^2.2.45",
     "@types/sinon": "^4.1.2",
     "chai": "^4.1.2",

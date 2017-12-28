@@ -5,7 +5,8 @@ module.exports = function (config) {
     basePath: '../',
     frameworks: ['mocha', 'sinon-chai', 'chai-shallow-deep-equal'],
     files: [
-      { pattern: 'tests/index.test.ts', watched: false }
+      { pattern: 'tests/index.test.ts', watched: false },
+      { pattern: 'assets/*.FPG', served: true, included: false, nocache: true }
     ],
     preprocessors: {
       'tests/**/*.ts': ['webpack']
@@ -23,6 +24,6 @@ module.exports = function (config) {
       fixWebpackSourcePaths: true
     },
     reporters: ['mocha', 'coverage-istanbul'],
-    mime: { 'text/x-typescript': ['ts','tsx'] }
+    mime: { 'text/x-typescript': ['ts'] }
   });
 };

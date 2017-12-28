@@ -27,5 +27,8 @@ module.exports = {
     watchContentBase: true,
     disableHostCheck: true
   },
-  plugins: plugins
+  plugins: plugins,
+  resolve: {
+    extensions: ['.ts', '.js', '.json']
+  }
 };
