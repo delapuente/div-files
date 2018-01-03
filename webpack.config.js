@@ -21,7 +21,7 @@ module.exports = {
       }
     ]
   },
-  devtool: 'source-map',
+  devtool: 'eval-source-map',
   devServer: {
     contentBase: [path.resolve(__dirname), path.resolve(__dirname, 'assets')],
     watchContentBase: true,
