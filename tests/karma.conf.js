@@ -6,7 +6,7 @@ module.exports = function (config) {
     frameworks: ['mocha', 'sinon-chai', 'chai-shallow-deep-equal'],
     files: [
       { pattern: 'tests/index.test.ts', watched: false },
-      { pattern: 'assets/*.FPG', served: true, included: false, nocache: true }
+      { pattern: 'assets/*', served: true, included: false, nocache: true }
     ],
     preprocessors: {
       'tests/**/*.ts': ['webpack']

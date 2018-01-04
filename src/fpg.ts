@@ -1,5 +1,9 @@
+import * as pal from './pal';
+import { PALFile } from './pal';
 
 const VERSION_OFFSET = 7;
+
+const PAL_OFFSET = 8;
 
 const MAPS_OFFSET = 1352;
 
@@ -7,17 +11,21 @@ type PromiseResolve = (value?: {} | Thenable<{}>) => void;
 
 type PromiseReject = (error?: any) => void;
 
-class FPGFile {
+export class FPGFile {
 
   ready: Promise<void>;
 
   version: number;
+
+  private _isReady: boolean;
 
   private _bytes: Uint8Array;
 
   private _length: number;
 
   private _version: number;
+
+  private _pal: PALFile; 
 
   private _maps: Array<any>;
 
@@ -28,6 +36,7 @@ class FPGFile {
     this._length = 0;
     this._maps = [];
     this._mapRequests = [];
+    this._pal = new PALFile(new Uint8Array(this._bytes, PAL_OFFSET));
     this.version = this._bytes[VERSION_OFFSET];
     this.ready = this._readMeta();
   }
@@ -35,6 +44,9 @@ class FPGFile {
   map(index) {
     if (index < 0) {
       return Promise.reject('Map indices start in 0');
+    }
+    if (this._isReady && index >= this._length) {
+      return Promise.reject(`There is no map with index ${index}`);
     }
     if (this._length > index) {
       return Promise.resolve(this._maps[index]);
@@ -57,6 +69,7 @@ class FPGFile {
       function readMap(offset) {
         if (offset >= file._bytes.byteLength) {
           file._confirmAllMaps();
+          file._isReady = true;
           resolve();
           return;
         }
@@ -72,6 +85,19 @@ class FPGFile {
           pointsOffset: offset + 64
         };
 
+        Object.defineProperty(entry, 'data', {
+          get() {
+            const size = this.width * this.height;
+            const endOfData = this.dataOffset + size;
+            const bitmap = new Uint8ClampedArray(4 * size);
+            for (let i = this.dataOffset, j = 0; i < endOfData; i++, j+=4) {
+              const colorIndex = file._bytes[i];
+              const pixelIndex = j;
+              bitmap.set(file._pal.color(colorIndex), pixelIndex);
+            }
+            return new ImageData(bitmap, this.width, this.height);
+          }
+        });
         entry.dataOffset = offset + 64 + (4 * entry.pointCount);
         entry.size = entry.dataOffset + (entry.width * entry.height) - offset;
         file._maps.push(entry);
@@ -113,22 +139,20 @@ class FPGFile {
 
 };
 
-export default {
-  read(buffer: ArrayBuffer): Promise<FPGFile> {
-    return this._assertFpg(buffer)
-    .then(bytes => new FPGFile(bytes));
-  },
-
-  _assertFpg(buffer: Uint8Array): Promise<Uint8Array> {
-    const bytes = new Uint8Array(buffer);
-    return new Promise((resolve, reject) => {
-      ['f', 'p', 'g', 0x1A, 0x0D, 0x0A, 0x00].forEach((code, index) => {
-        const char = typeof code === 'string' ? code.charCodeAt(0) : code;
-        if (bytes[index] !== char) {
-          reject('The file is not a FPG file');
-        }
-      });
-      resolve(bytes);
-    });
-  }
+export function read(buffer: ArrayBuffer):Promise<FPGFile> {
+  return _assertFpg(buffer)
+  .then(bytes => new FPGFile(bytes));
 };
+
+function _assertFpg(buffer: ArrayBuffer): Promise<Uint8Array> {
+  const bytes = new Uint8Array(buffer);
+  return new Promise((resolve, reject) => {
+    ['f', 'p', 'g', 0x1A, 0x0D, 0x0A, 0x00].forEach((code, index) => {
+      const char = typeof code === 'string' ? code.charCodeAt(0) : code;
+      if (bytes[index] !== char) {
+        reject('The file is not a FPG file');
+      }
+    });
+    resolve(bytes);
+  });
+}
