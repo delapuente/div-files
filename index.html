@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>div-files demo</title>
+  <script src="./dist/div-files.js"></script>
+  <style>
+    * { font-family: sans-serif; }
+    #pal {
+      display: grid;
+      grid-template-columns: repeat(16, 20px);
+      grid-template-rows: repeat(16, 20px);
+    }
+    #fpg {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); 
+    }
+    figure {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>div-files demo</h1>
+  <p>Try loading a DIV's <strong>FPG</strong> or a <strong>PAL</strong> file.</p>
+  <form>
+    <label>Select a DIV file: <input type="file" onchange="load(); "accept=".fpg,.pal"/></label>
+    <button type="button" disabled onclick="load();">Reload</button>
+  </form>
+  <p class="error" id="no-fpg-error" hidden>This file is not a DIV FPG file.</p>
+  <p class="error" id="no-pal-error" hidden>This file is not a DIV PAL file.</p>
+  <section id="results">
+    <section id="pal"></section>
+    <section id="fpg"></section>
+  </section>
+  <script>
+    var fileSelector = document.querySelector('input');
+    var reloadButton = document.querySelector('button');
+    var noFPGError = document.querySelector('#no-fpg-error');
+    var noPALError = document.querySelector('#no-pal-error');
+    var palSection = document.querySelector('#pal');
+    var fpgSection = document.querySelector('#fpg');
+
+    function load() {
+      var file = fileSelector.files[0];
+      var reader = new FileReader();
+      reader.onloadend = evt => {
+        var tokens = file.name.split('.');
+        var extension = tokens[tokens.length - 1].toLowerCase();
+        if (extension === 'fpg') {
+          return handleFPG(evt.target.result);
+        }
+        if (extension === 'pal') {
+          return handlePAL(evt.target.result);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      reloadButton.disabled = false;
+    }
+
+    function handleFPG(buffer) {
+      div.fpg.read(buffer)
+      .then(fpg => {
+        fpgSection.innerHTML = '';
+        var current = 0;
+        noFPGError.hidden = true;
+        showPal(fpg.pal);
+        fpg.map(current).then(handleMap).catch();
+
+        function handleMap(map) {
+          showMap(map);
+          current++;
+          fpg.map(current).then(handleMap);
+        }
+      }, showNoFPGError);
+    }
+
+    function handlePAL(buffer) {
+      noPALError.hidden = true;
+      div.pal.read(buffer)
+      .then(showPal, showNoPALError);
+    }
+
+    function showPal(pal) {
+      palSection.innerHTML = '';
+      for (var i = 0, l = pal.length; i < l; i++) {
+        var sample = document.createElement('DIV');
+        sample.id = 'color-' + i;
+        sample.style.backgroundColor = toHexCode(pal.color(i));
+        palSection.appendChild(sample);
+      }
+    }
+
+    function showMap(map) {
+      var figure = document.createElement('FIGURE');
+      var caption = document.createElement('FIGCAPTION');
+      caption.innerText = map.code + ': ' + map.name + '; ' + map.desc;
+      fpgSection.appendChild(figure);
+      map.asCanvas()
+      .then(canvas => {
+        figure.appendChild(canvas);
+        figure.appendChild(caption);
+      });
+    }
+
+    function toHexCode(array) {
+      var color = (array[0] << 16) + (array[1] << 8) + array[2];
+      return '#' + pad(color.toString(16));
+      
+      function pad(hexcode) {
+        if (hexcode.length < 6) {
+          var padding = new Array(6 - hexcode.length + 1).join('0');
+          hexcode = padding + hexcode;
+        }
+        return hexcode;
+      }
+    }
+  
+    function showNoFPGError() {
+      noFPGError.hidden = false;
+    }
+
+    function showNoPALError() {
+      noPALError.hidden = false;
+    }
+  </script>
+</body>
+</html>
