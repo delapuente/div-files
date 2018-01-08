@@ -15,9 +15,8 @@
     "lint:fix": "semistandard --fix | snazzy",
     "postdeploy": "npm run clean",
     "predeploy": "npm run clean && shx mkdir -p site",
-    "start": "concurrently \"npm run signalserver\" \"npm run build\"",
+    "start": "npm run build",
     "dev": "webpack-dev-server",
-    "signalserver": "signalhub listen -p 9000",
     "test": "karma start ./tests/karma.conf.js"
   },
   "pre-commit": [
