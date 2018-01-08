@@ -10,7 +10,9 @@ module.exports = {
   output: {
     filename: 'div-files.js',
     path: path.resolve(__dirname, 'dist'),
-    publicPath: 'dist'
+    publicPath: 'dist',
+    library: 'div',
+    libraryTarget: 'umd'
   },
   module: {
     rules: [

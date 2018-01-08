@@ -16,11 +16,13 @@ roadmap.
 Import the script with:
 
 ```html
-<script src=""></script>
+<script src="https://rawgit.com/delapuente/div-files/master/dist/div-files.js"></script>
 ```
 
-You'll find two namespaces `fpg` and `pal` right now for reading collections of
-graphics and palettes respectively.
+You'll find a new `div` global with `fpg` and `pal` entries for reading
+collections of graphics and palettes respectively.
+
+[Try it now](https://delapuente.github.io/div-files)!
 
 ### fpg
 
