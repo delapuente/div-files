@@ -1,6 +1,6 @@
 {
   "name": "div-files",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Utilities to load and manipulate DIV files.",
   "main": "dist/div-files.js",
   "scripts": {
