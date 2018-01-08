@@ -25,7 +25,7 @@ export class FPGFile {
 
   private _version: number;
 
-  private _pal: PALFile; 
+  pal: PALFile; 
 
   private _maps: Array<any>;
 
@@ -36,7 +36,7 @@ export class FPGFile {
     this._length = 0;
     this._maps = [];
     this._mapRequests = [];
-    this._pal = new PALFile(new Uint8Array(this._bytes, PAL_OFFSET));
+    this.pal = new PALFile(new Uint8Array(this._bytes, PAL_OFFSET));
     this.version = this._bytes[VERSION_OFFSET];
     this.ready = this._readMeta();
   }
@@ -85,17 +85,36 @@ export class FPGFile {
           pointsOffset: offset + 64
         };
 
-        Object.defineProperty(entry, 'data', {
-          get() {
+        Object.defineProperty(entry, 'asImageData', {
+          value: function () {
             const size = this.width * this.height;
             const endOfData = this.dataOffset + size;
             const bitmap = new Uint8ClampedArray(4 * size);
             for (let i = this.dataOffset, j = 0; i < endOfData; i++, j+=4) {
               const colorIndex = file._bytes[i];
               const pixelIndex = j;
-              bitmap.set(file._pal.color(colorIndex), pixelIndex);
+              bitmap.set(file.pal.color(colorIndex), pixelIndex);
             }
-            return new ImageData(bitmap, this.width, this.height);
+            return Promise.resolve(
+              new ImageData(bitmap, this.width, this.height)
+            );
+          }
+        });
+        Object.defineProperty(entry, 'asDataUrl', {
+          value: async function () {
+            const canvas = await this.asCanvas();
+            return Promise.resolve(canvas.toDataURL());
+          }
+        });
+        Object.defineProperty(entry, 'asCanvas', {
+          value: async function () {
+            const data = await this.asImageData();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = data.width;
+            canvas.height = data.height;
+            ctx.putImageData(data, 0, 0);
+            return Promise.resolve(canvas);
           }
         });
         entry.dataOffset = offset + 64 + (4 * entry.pointCount);

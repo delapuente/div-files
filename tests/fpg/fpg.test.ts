@@ -64,14 +64,41 @@ suite("FPG file reader", function () {
     assert.equal(map.height, 200);
   });
 
-  test('Reads the graphic data of an image asynchronously', async () => {
+  test('Reads the graphic data of an image as ImageData', async () => {
     const map = await fpgFile.map(1);
-    const imgData = await map.data;
+    const imgData = await map.asImageData();
     const expected = await imageDataFrom('/base/assets/bg.png');
     assertEqualImageData(imgData, expected);
   });
+  
+  test('Returns different copies of the image data', async () => {
+    const map = await fpgFile.map(1);
+    const imgDataA = await map.asImageData();
+    const imgDataB = await map.asImageData();
+    assert.notEqual(imgDataA, imgDataB);
+  });
 
-  function imageDataFrom(url): Promise<ImageData> {
+  test('Reads the graphic data of an image as a data URL', async () => {
+    const map = await fpgFile.map(1);
+    const dataUrl = await map.asDataUrl();
+    const expected = await dataUrlFrom('/base/assets/bg.png');
+    assert.equal(dataUrl, expected);
+  });
+
+  test('Reads the graphic data of an image as a canvas', async () => {
+    const map = await fpgFile.map(1);
+    const canvas = await map.asCanvas();
+    const [expected] = await canvasFrom('/base/assets/bg.png');
+    const { width, height } = canvas;
+    assert.equal(width, expected.width);
+    assert.equal(height, expected.height);
+    assertEqualImageData(
+      canvas.getContext('2d').getImageData(0, 0, width, height),
+      expected.getContext('2d').getImageData(0, 0, width, height)
+    );
+  });
+
+  function canvasFrom(url): Promise<[HTMLCanvasElement, CanvasRenderingContext2D]> {
     return new Promise(resolve => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -79,26 +106,23 @@ suite("FPG file reader", function () {
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
-        ctx.drawImage(img, 0, 0 );
-        resolve(ctx.getImageData(0, 0, img.width, img.height));
+        ctx.drawImage(img, 0, 0);
+        resolve([canvas, ctx]);
       };
       img.src = url;
     });
   }
 
-  function download(data) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    createImageBitmap(data)
-    .then(bitmap => {
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-      ctx.drawImage(bitmap, 0, 0);
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL();
-      a.download = 'bg2.png';
-      a.click();
-    });
+  function imageDataFrom(url): Promise<ImageData> {
+    return canvasFrom(url)
+    .then(
+      ([canvas, ctx]) => ctx.getImageData(0, 0, canvas.width, canvas.height)
+    );
+  }
+
+  function dataUrlFrom(url): Promise<string> {
+    return canvasFrom(url)
+    .then(([canvas]) => canvas.toDataURL());
   }
 
   function assertEqualImageData(target, expected) {
