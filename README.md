@@ -32,7 +32,7 @@ this buffer is left to the developer.
 ```js
 const response = await fetch('/test.fpg');
 const buffer = await response.arrayBuffer();
-const fpgFile = await fpg.read(buffer);
+const fpgFile = await div.fpg.read(buffer);
 ```
 
 `FPGFile#length` returns a promise which resolves into the number of maps in the
@@ -67,6 +67,12 @@ sprite.
 
 `read(buffer)` reads an `ArrayBuffer` into a `PALFile` object. How to obtain
 this buffer is left to the developer.
+
+```js
+const response = await fetch('/test.pal');
+const buffer = await response.arrayBuffer();
+const fpgFile = await div.pal.read(buffer);
+```
 
 `PALFile#length` is always `256`.
 
